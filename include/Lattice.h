@@ -38,9 +38,9 @@ public:
 
     void RunIteration();
 
-    std::vector<std::vector<int>>& GetLattice()
+    void GetLattice(std::vector<std::vector<int>>& rLattice)
     {
-        return mLattice;
+        rLattice = mLattice;
     };
 
 private:

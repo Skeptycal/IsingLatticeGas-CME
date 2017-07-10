@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include "../include/Export.h"
+#include <boost\thread.hpp>
 
 const int NUM_PROTEIN_INIT = 0;
 const int MIN_DISSOCIATION_SIZE = 60;
@@ -25,6 +26,7 @@ double gK;
 int gIterations;
 int gCodeItr;
 std::string gOutputPath("");
+boost::thread* gpExpThread;
 
 
 bool ParseArguments(int argc, const char* argv[])
@@ -88,7 +90,15 @@ int main(int argc, const char* argv[])
 
         if (itr % EXPORT_INTERVAL == 0)
         {
-            exp.Run(itr);
+            if (gpExpThread != nullptr)
+            {
+                gpExpThread->join();
+                delete gpExpThread;
+            }
+
+            std::vector<std::vector<int>> l_lattice;
+            lattice.GetLattice(l_lattice);
+            gpExpThread = new boost::thread(&Export::Run, &exp, itr, l_lattice);
         }
 
         lattice.CheckInsertion();
@@ -96,5 +106,7 @@ int main(int argc, const char* argv[])
         lattice.RunIteration();
     }
 
-    exp.Run(gIterations);
+    std::vector<std::vector<int>> l_lattice;
+    lattice.GetLattice(l_lattice);
+    exp.Run(gIterations, l_lattice);
 }
