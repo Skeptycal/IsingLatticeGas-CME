@@ -17,6 +17,15 @@ file(COPY ${BOOST_DIR}/lib/boost_filesystem-vc120-mt-1_64.dll
 	
 file(COPY ${BOOST_DIR}/lib/boost_filesystem-vc120-mt-1_64.dll 
 	 DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/Release/bin)
+	 
+file(COPY ${BOOST_DIR}/lib/boost_thread-vc120-mt-gd-1_64.dll 
+	 DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/Debug/bin)
+	 
+file(COPY ${BOOST_DIR}/lib/boost_thread-vc120-mt-1_64.dll 
+	 DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/RelWithDebInfo/bin)
+	
+file(COPY ${BOOST_DIR}/lib/boost_thread-vc120-mt-1_64.dll 
+	 DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/build/Release/bin)
 
 set (CME_MDL_SRC
      ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp

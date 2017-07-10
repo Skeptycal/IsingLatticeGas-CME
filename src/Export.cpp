@@ -20,7 +20,7 @@ Export::Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, double
         std::cout << "Created directory";
     }
 
-    mLatticeObj = rLatticeObj;
+    mpLatticeObj = rLatticeObj;
 
     mExportLattice = exportLattice;
     mExportHistogram = exportHistogram;
@@ -28,26 +28,24 @@ Export::Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, double
     mExportAmax = exportAmax;
 }
 
-void Export::Run(int iteration)
+void Export::Run(int iteration, std::vector<std::vector<int>>& rLattice)
 {
     if (mExportLattice)
     {
-        ExportLattice(iteration);
+        ExportLattice(iteration, rLattice);
     }
 }
 
-void Export::ExportLattice(int iteration)
+void Export::ExportLattice(int iteration, std::vector<std::vector<int>>& rLattice)
 {
-    std::vector<std::vector<int>> lattice = mLatticeObj->GetLattice();
-
     std::ofstream lattice_file;
     lattice_file.open(mOutputPath + "\\Lattice_" + std::to_string(iteration) + ".txt");
 
-    for (size_t row = 0; row < lattice.size(); row++)
+    for (size_t row = 0; row < rLattice.size(); row++)
     {
-        for (size_t col = 0; col < lattice[0].size(); col++)
+        for (size_t col = 0; col < rLattice[0].size(); col++)
         {
-            lattice_file << lattice[row][col] << ",";
+            lattice_file << rLattice[row][col] << ",";
         }
         lattice_file << "\n";
     }
