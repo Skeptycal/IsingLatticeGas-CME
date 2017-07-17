@@ -1,6 +1,8 @@
 #include <iostream>
 #include <sstream>
+#include "../include/Lattice.h"
 #include "../include/Export.h"
+#include "../include/SizingProcess.h"
 #include <boost\thread.hpp>
 
 const int NUM_PROTEIN_INIT = 0;
@@ -81,9 +83,10 @@ int main(int argc, const char* argv[])
     }
 
     Lattice lattice = Lattice(LATTICE_SIZE, NUM_PROTEIN_INIT, INSERTION_MULTIPLIER, R_I, DELTA_T, gK, MAX_PROTEINS);
+    SizingProcess sizing_process = SizingProcess(&lattice);
     Export exp = Export(&lattice, gOutputPath, gCodeItr, gK, EXPORT_LATTICE, EXPORT_HISTOGRAM, EXPORT_CLUMP, EXPORT_AMAX);
     exp.WriteParameters(MIN_DISSOCIATION_SIZE, INSERTION_MULTIPLIER, CLUMP_START_SIZE, CLUMP_MIN_SIZE, R_I, R_D, DELTA_T, gK, gIterations);
-
+    sizing_process.Run();
     for (int itr = 0; itr < gIterations; itr++)
     {
         std::cout << "Itr: " << itr << std::endl;
@@ -97,7 +100,7 @@ int main(int argc, const char* argv[])
             }
 
             std::vector<std::vector<int>> l_lattice;
-            lattice.GetLattice(l_lattice);
+            lattice.GetLatticeCopy(l_lattice);
             gpExpThread = new boost::thread(&Export::Run, &exp, itr, l_lattice);
         }
 
@@ -107,6 +110,6 @@ int main(int argc, const char* argv[])
     }
 
     std::vector<std::vector<int>> l_lattice;
-    lattice.GetLattice(l_lattice);
+    lattice.GetLatticeCopy(l_lattice);
     exp.Run(gIterations, l_lattice);
 }

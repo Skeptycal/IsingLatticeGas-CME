@@ -1,7 +1,8 @@
 #include "../include/Protein.h"
 
-Protein::Protein(int x, int y)
+Protein::Protein(int x, int y, int id)
 {
+    mID = id;
     mX = x;
     mY = y;
 }

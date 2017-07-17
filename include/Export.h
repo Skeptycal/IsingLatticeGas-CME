@@ -1,3 +1,6 @@
+#ifndef EXPORT_H
+#define EXPORT_H
+
 #include "Lattice.h"
 #include <boost\filesystem.hpp>
 #include "boost\date_time\posix_time\posix_time.hpp"
@@ -5,9 +8,8 @@
 class Export
 {
 public:
-    Export() {};
-
     Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, double K, bool exportLattice, bool exportHistogram, bool exportClump, bool exportAmax);
+    ~Export() {};
 
     void Run(int itr, std::vector<std::vector<int>>& rLattice);
 
@@ -27,3 +29,5 @@ private:
 
     std::string mOutputPath;
 };
+
+#endif //EXPORT_H

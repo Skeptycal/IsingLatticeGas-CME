@@ -32,13 +32,15 @@ set (CME_MDL_SRC
 	 ${CMAKE_CURRENT_SOURCE_DIR}/src/Lattice.cpp
 	 ${CMAKE_CURRENT_SOURCE_DIR}/src/Protein.cpp
 	 ${CMAKE_CURRENT_SOURCE_DIR}/src/Clump.cpp
-	 ${CMAKE_CURRENT_SOURCE_DIR}/src/Export.cpp)
+	 ${CMAKE_CURRENT_SOURCE_DIR}/src/Export.cpp
+	 ${CMAKE_CURRENT_SOURCE_DIR}/src/SizingProcess.cpp)
 
 set (CME_MDL_HDR
      ${CMAKE_CURRENT_SOURCE_DIR}/include/Lattice.h
 	 ${CMAKE_CURRENT_SOURCE_DIR}/include/Protein.h
 	 ${CMAKE_CURRENT_SOURCE_DIR}/include/Clump.h
-	 ${CMAKE_CURRENT_SOURCE_DIR}/include/Export.h)
+	 ${CMAKE_CURRENT_SOURCE_DIR}/include/Export.h
+	 ${CMAKE_CURRENT_SOURCE_DIR}/include/SizingProcess.h)
 
 
 add_executable(CmeModel ${CME_MDL_SRC} ${CME_MDL_HDR})

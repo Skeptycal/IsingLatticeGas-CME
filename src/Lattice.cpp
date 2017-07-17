@@ -8,6 +8,8 @@ Lattice::Lattice(int latticeSize, int numProteinInit, int insertionMultiplier, d
 {
     mLatticeSize = latticeSize;
     mMaxProteins = maxProteins;
+    mNextProtID = 0;
+    mProteins.reserve(mMaxProteins);
 
     //Initialize lattice
     GenerateLattice(numProteinInit);
@@ -25,52 +27,51 @@ void Lattice::GenerateLattice(int numProteinInit)
 {
     int prot_to_insert = numProteinInit;
 
-    //Initialize lattice to zero
+    //Initialize lattice to zero/nullptr
     for (int i = 0; i < mLatticeSize; i++)
     {
         std::vector<int> l_lat_row(mLatticeSize, 0);
         mLattice.emplace_back(l_lat_row);
+
+        std::vector<Protein*> l_prot_lat_row(mLatticeSize, nullptr);
+        mProteinPtrLattice.emplace_back(l_prot_lat_row);
     }
 
+#if 1
+
+    for (int x = 0; x < 10; x++)
+    {
+        for (int y = 0; y < 10; y++)
+        {
+            mProteins.push_back(Protein(x, y, mNextProtID++));
+            mLattice[x][y] = 1;
+            mProteinPtrLattice[x][y] = &(mProteins[GetNumProteins() - 1]);
+        }
+    }
+
+#else
     //Seed rand with system time
     std::srand(static_cast<int>(time(0)));
 
     //Randomly insert protein to the lattice
     while (prot_to_insert > 0)
     {
-        int x = std::rand() % mLatticeSize ;
-        int y = std::rand() % mLatticeSize ;
+        int x = std::rand() % mLatticeSize;
+        int y = std::rand() % mLatticeSize;
         if (mLattice[x][y] == 0)
         {
-            Protein l_protein(x, y);
-            mProteins.emplace_back(l_protein);
+            mProteins.push_back(Protein(x, y, mNextProtID++));
             mLattice[x][y] = 1;
+            mProteinPtrLattice[x][y] = &(mProteins[GetNumProteins() - 1]);
             prot_to_insert--;
         }
     }
+#endif
 }
 
 int Lattice::GetNumProteins()
 {
-    int total = 0;
-
-    for (size_t i = 0; i < mLattice.size(); i++)
-    {
-        for (size_t j = 0; j < mLattice[0].size(); j++)
-        {
-            if (mLattice[i][j] > 0)
-            {
-                total++;
-            }
-        }
-    }
-
-    if (total != mProteins.size())
-    {
-        std::cout << "Protein vector disagrees with proteins in lattice." << std::endl;
-    }
-
-    return total;
+    return mProteins.size();
 }
 
 bool Lattice::CheckInsertion()
@@ -85,9 +86,9 @@ bool Lattice::CheckInsertion()
             int y = std::rand() % mLatticeSize;
             if (mLattice[x][y] == 0)
             {
-                Protein l_protein(x, y);
-                mProteins.emplace_back(l_protein);
+                mProteins.push_back(Protein(x, y, mNextProtID++));
                 mLattice[x][y] = 1;
+                mProteinPtrLattice[x][y] = &(mProteins[GetNumProteins() - 1]);
                 return true;
             }
         }
@@ -121,6 +122,10 @@ void Lattice::RunIteration()
             {
                 mLattice[curr_x][curr_y] = 0;
                 mLattice[new_x][new_y] = 1;
+
+                mProteinPtrLattice[new_x][new_y] = mProteinPtrLattice[curr_x][curr_y];
+                mProteinPtrLattice[curr_x][curr_y] = nullptr;
+
                 mProteins[i].SetAddress(new_x, new_y);
             }
         }
@@ -239,4 +244,17 @@ int Lattice::CalculateEnergyChange(int currX, int currY, int newX, int newY)
         }
     }
     return u[1] - u[0];
+}
+
+int Lattice::GetProteinIndexAtLatSite(int x, int y)
+{
+    int prot_id = mProteinPtrLattice[x][y]->GetId();
+
+    for (int i = 0; i < mProteins.size(); i++)
+    {
+        if (prot_id == mProteins[i].GetId())
+        {
+            return i;
+        }
+    }
 }
