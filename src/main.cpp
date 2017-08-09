@@ -5,10 +5,10 @@
 #include "../include/SizingProcess.h"
 #include <boost\thread.hpp>
 
-const int NUM_PROTEIN_INIT = 0;
+const int NUM_PROTEIN_INIT = 5000;
 const int MIN_DISSOCIATION_SIZE = 60;
 const int INSERTION_MULTIPLIER = 30;
-const int DISSOCIATION_INTERVAL = 2500;
+const int DISSOCIATION_INTERVAL = 500;
 const int EXPORT_INTERVAL = 500;
 const int CLUMP_START_SIZE = 10;
 const int CLUMP_MIN_SIZE = 3;
@@ -19,7 +19,7 @@ const double R_I = 0.2;
 const double R_D = 0.5;
 const double DELTA_T = 0.0002328;
 
-const bool EXPORT_LATTICE = 1;
+const bool EXPORT_LATTICE = 0;
 const bool EXPORT_HISTOGRAM = 0;
 const bool EXPORT_CLUMP = 0;
 const bool EXPORT_AMAX = 0;
@@ -82,26 +82,33 @@ int main(int argc, const char* argv[])
         return 0;
     }
 
-    Lattice lattice = Lattice(LATTICE_SIZE, NUM_PROTEIN_INIT, INSERTION_MULTIPLIER, R_I, DELTA_T, gK, MAX_PROTEINS);
-    SizingProcess sizing_process = SizingProcess(&lattice);
-    Export exp = Export(&lattice, gOutputPath, gCodeItr, gK, EXPORT_LATTICE, EXPORT_HISTOGRAM, EXPORT_CLUMP, EXPORT_AMAX);
+    Lattice lattice = Lattice(LATTICE_SIZE, NUM_PROTEIN_INIT, INSERTION_MULTIPLIER, DISSOCIATION_INTERVAL, R_D, R_I, DELTA_T, gK, MAX_PROTEINS, MIN_DISSOCIATION_SIZE);
+    SizingProcess sizing_process = SizingProcess(&lattice, CLUMP_START_SIZE, CLUMP_MIN_SIZE);
+    Export exp = Export(&lattice, gOutputPath, gCodeItr, gIterations, gK, EXPORT_LATTICE, EXPORT_HISTOGRAM, EXPORT_CLUMP, EXPORT_AMAX);
     exp.WriteParameters(MIN_DISSOCIATION_SIZE, INSERTION_MULTIPLIER, CLUMP_START_SIZE, CLUMP_MIN_SIZE, R_I, R_D, DELTA_T, gK, gIterations);
-    sizing_process.Run();
+
     for (int itr = 0; itr < gIterations; itr++)
     {
         std::cout << "Itr: " << itr << std::endl;
 
-        if (itr % EXPORT_INTERVAL == 0)
-        {
-            if (gpExpThread != nullptr)
-            {
-                gpExpThread->join();
-                delete gpExpThread;
-            }
+        //if (itr % EXPORT_INTERVAL == 0)
+        //{
+        //    if (gpExpThread != nullptr)
+        //    {
+        //        gpExpThread->join();
+        //        delete gpExpThread;
+        //    }
 
-            std::vector<std::vector<int>> l_lattice;
-            lattice.GetLatticeCopy(l_lattice);
-            gpExpThread = new boost::thread(&Export::Run, &exp, itr, l_lattice);
+        //    //Need to copy lattice before spinning a thread so the lattice is unchanged
+        //    std::vector<std::vector<int>> l_lattice;
+        //    lattice.GetLatticeCopy(l_lattice);
+        //    gpExpThread = new boost::thread(&Export::Run, &exp, itr, l_lattice);
+        //}
+
+        if (itr % DISSOCIATION_INTERVAL == 0)
+        {
+            sizing_process.Run(itr);
+            lattice.CheckDissociation();
         }
 
         lattice.CheckInsertion();
@@ -109,7 +116,11 @@ int main(int argc, const char* argv[])
         lattice.RunIteration();
     }
 
-    std::vector<std::vector<int>> l_lattice;
-    lattice.GetLatticeCopy(l_lattice);
-    exp.Run(gIterations, l_lattice);
+    exp.WriteClumps();
+
+    {
+        std::vector<std::vector<int>> l_lattice;
+        lattice.GetLatticeCopy(l_lattice);
+        exp.Run(gIterations, l_lattice);
+    }
 }

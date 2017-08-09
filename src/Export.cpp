@@ -3,7 +3,7 @@
 #include <sstream>
 #include <fstream>
 
-Export::Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, double K, bool exportLattice, bool exportHistogram, bool exportClump, bool exportAmax)
+Export::Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, int maxIteration, double K, bool exportLattice, bool exportHistogram, bool exportClump, bool exportAmax)
 {
     auto facet = new boost::posix_time::time_facet("%Y-%m-%d-T%H%M%S");
 
@@ -26,6 +26,8 @@ Export::Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, double
     mExportHistogram = exportHistogram;
     mExportClump = exportClump;
     mExportAmax = exportAmax;
+
+    mMaxIteration = maxIteration;
 }
 
 void Export::Run(int iteration, std::vector<std::vector<int>>& rLattice)
@@ -70,4 +72,47 @@ void Export::WriteParameters(int minDissSize, int instMult, int clumpStrtSize, i
     param_file << "Iterations \t" << iterations << "\n";
 
     param_file.close();
+}
+
+void Export::WriteClumps()
+{
+    std::vector<Clump*> clump_vector = mpLatticeObj->GetClumpReferences();
+
+    for (auto clump : clump_vector)
+    {
+        std::vector<std::pair<int, int>> size_history = clump->GetSizeHistoryReference();
+
+        std::ofstream clump_file;
+        clump_file.open(mOutputPath + "\\Clump_" + std::to_string(clump->GetID()) + ".txt");
+
+        switch (clump->GetClumpState())
+        {
+            case ClumpState::PRODUCTIVE:
+            {
+                clump_file << "productive\n";
+                break;
+            }
+            case ClumpState::ACTIVE:
+            {
+                if (size_history[size_history.size() - 1].first == mMaxIteration)
+                {
+                    clump_file << "active\n";
+                }
+                else
+                {
+                    clump_file << "aborted\n";
+                }
+                break;
+            }
+            default:
+                break;
+        }
+
+        for (auto size : size_history)
+        {
+            clump_file << size.first << "," << size.second << "\n";
+        }
+
+        clump_file.close();
+    }
 }

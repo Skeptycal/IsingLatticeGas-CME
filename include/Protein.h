@@ -9,20 +9,19 @@ public:
     Protein(int x, int y, int id);
 
     void GetAddress(int& x, int& y);
-
     void SetAddress(int x, int y);
 
-    int GetId()
-    {
-        return mID;
-    }
+    int GetId();
+
+    int GetClumpId();
+    void SetClumpId(int id);
 
 private:
 
     int mID;
     int mX;
     int mY;
-
+    int mClumpID;
 };
 
 #endif //PROTEIN_H

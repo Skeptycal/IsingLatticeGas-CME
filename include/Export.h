@@ -2,16 +2,19 @@
 #define EXPORT_H
 
 #include "Lattice.h"
+#include "Clump.h"
 #include <boost\filesystem.hpp>
 #include "boost\date_time\posix_time\posix_time.hpp"
 
 class Export
 {
 public:
-    Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, double K, bool exportLattice, bool exportHistogram, bool exportClump, bool exportAmax);
+    Export(Lattice* rLatticeObj, std::string outputPath, int codeItr, int maxIteration, double K, bool exportLattice, bool exportHistogram, bool exportClump, bool exportAmax);
     ~Export() {};
 
     void Run(int itr, std::vector<std::vector<int>>& rLattice);
+
+    void WriteClumps();
 
     void WriteParameters(int minDissSize, int instMult, int clumpStrtSize, int clumpMinSize,
                          double rI, double rD, double deltaT, double K, int iterations);
@@ -26,6 +29,8 @@ private:
     bool mExportHistogram;
     bool mExportClump;
     bool mExportAmax;
+
+    int mMaxIteration;
 
     std::string mOutputPath;
 };

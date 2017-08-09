@@ -11,7 +11,7 @@ SizingProcess::SizingProcess(Lattice* rLatticeObj, int clumptStartSize, int clum
     mClumpMinSize = clumpMinSize;
 }
 
-void SizingProcess::Run()
+void SizingProcess::Run(int iteration)
 {
     std::vector<std::vector<int>>& rLattice = mpLatticeObj->GetLatticeReference();
 
@@ -28,7 +28,7 @@ void SizingProcess::Run()
 
         SizeClumpRecursive(i, rLattice, inclusive_proteins);
 
-        ClassifyClump(inclusive_proteins);
+        ClassifyClump(iteration, inclusive_proteins);
     }
 
 }
@@ -36,7 +36,7 @@ void SizingProcess::Run()
 void SizingProcess::SizeClumpRecursive(int proteinIndex, std::vector<std::vector<int>>& rLattice, std::vector<Protein*>& rInclusiveProteins)
 {
     //Add reference to vector of clump inclusive proteins
-    rInclusiveProteins.emplace_back(&(mpLatticeObj->GetProteinReference(proteinIndex)));
+    rInclusiveProteins.emplace_back(mpLatticeObj->GetProteinReference(proteinIndex));
 
     int x, y;
     mpLatticeObj->GetProteinAddress(proteinIndex, x, y);
@@ -49,7 +49,7 @@ void SizingProcess::SizeClumpRecursive(int proteinIndex, std::vector<std::vector
         GetNeighborAddress(x, y, static_cast<Direction>(i), new_x, new_y);
 
         if (!mCheckedLatSite[new_x][new_y] &&
-            rLattice[new_x][new_y])
+            rLattice[new_x][new_y] == 1)
         {
             SizeClumpRecursive(mpLatticeObj->GetProteinIndexAtLatSite(new_x, new_y), rLattice, rInclusiveProteins);
         }
@@ -126,7 +126,49 @@ void SizingProcess::GetNeighborAddress(int currX, int currY, Direction dir, int&
     }
 }
 
-void SizingProcess::ClassifyClump(std::vector<Protein*>& inclusive_proteins)
+void SizingProcess::ClassifyClump(int iteration, std::vector<Protein*>& rInclusiveProteins)
 {
+    // Count the clump ids from every protein
+    std::vector<int> clump_id_count(mpLatticeObj->GetNextClumpId() + 1, 0);
+    for (auto itr : rInclusiveProteins)
+    {
+        clump_id_count[itr->GetClumpId() + 1]++;
+    }
 
+    // Determine the most frequent value and use that as the clump id
+    int max_index = 0;
+    for (size_t i = 1; i < clump_id_count.size(); i++)
+    {
+        if (clump_id_count[i] > clump_id_count[max_index])
+        {
+            max_index = i;
+        }
+    }
+
+    int clump_id = max_index - 1;
+    if (clump_id == -1) //Create a new clump if the id is 0 and above start size
+    {
+        if (rInclusiveProteins.size() >= mClumpStartSize)
+        {
+            mpLatticeObj->CreateNewClump(iteration, rInclusiveProteins);
+        }
+    }
+    else // Otherwise abort or update the clump depending on size
+    {
+        if (rInclusiveProteins.size() < mClumpMinSize)
+        {
+            /*
+                This could either happen when the clump dissolves or if a protein that was apart of a clump moves
+                away from it. There is no way to identify the case so we reset the protein clump id and continue.
+            */
+            for (auto itr : rInclusiveProteins)
+            {
+                itr->SetClumpId(-1);
+            }
+        }
+        else
+        {
+            mpLatticeObj->UpdateClump(iteration, clump_id, rInclusiveProteins);
+        }
+    }
 }

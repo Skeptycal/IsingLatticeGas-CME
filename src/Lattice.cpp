@@ -4,12 +4,14 @@
 #include <iostream>
 #include <math.h>
 
-Lattice::Lattice(int latticeSize, int numProteinInit, int insertionMultiplier, double insertionRate, double deltaTime, double k, int maxProteins)
+Lattice::Lattice(int latticeSize, int numProteinInit, int insertionMultiplier, int dissociationInterval, double dissociationRate, double insertionRate, double deltaTime, double k, int maxProteins, int minDissociationSize)
 {
     mLatticeSize = latticeSize;
     mMaxProteins = maxProteins;
     mNextProtID = 0;
-    mProteins.reserve(mMaxProteins);
+    mNextClumpID = 0;
+    mDissociationInterval = dissociationInterval;
+    mMinDissociationSize = minDissociationSize;
 
     //Initialize lattice
     GenerateLattice(numProteinInit);
@@ -21,6 +23,24 @@ Lattice::Lattice(int latticeSize, int numProteinInit, int insertionMultiplier, d
     mMvmtProb[0] = std::exp((-1.0 * k) * 1.0);
     mMvmtProb[1] = std::exp((-1.0 * k) * 2.0);
     mMvmtProb[2] = std::exp((-1.0 * k) * 3.0);
+
+    //Calculate dissociation probability
+    mDissociationProb = dissociationRate * dissociationInterval * deltaTime * std::exp(-1.0 * dissociationRate * dissociationInterval * deltaTime);
+}
+
+Lattice::~Lattice()
+{
+    // Free memory used for protein objects
+    for (size_t i = 0; i < mProteins.size(); i++)
+    {
+        delete mProteins[i];
+    }
+
+    // Free memory used for clump objects
+    for (size_t i = 0; i < mClumps.size(); i++)
+    {
+        delete mClumps[i];
+    }
 }
 
 void Lattice::GenerateLattice(int numProteinInit)
@@ -37,15 +57,21 @@ void Lattice::GenerateLattice(int numProteinInit)
         mProteinPtrLattice.emplace_back(l_prot_lat_row);
     }
 
-#if 1
+#if 0
 
-    for (int x = 0; x < 10; x++)
+    for (int i = 0; i < 700; i += 100)
     {
-        for (int y = 0; y < 10; y++)
+        for (int j = 0; j < 700; j += 100)
         {
-            mProteins.push_back(Protein(x, y, mNextProtID++));
-            mLattice[x][y] = 1;
-            mProteinPtrLattice[x][y] = &(mProteins[GetNumProteins() - 1]);
+            for (int x = i; x < i + 10; x++)
+            {
+                for (int y = j; y < j + 10; y++)
+                {
+                    mProteins.push_back(new Protein(x, y, mNextProtID++));
+                    mLattice[x][y] = 1;
+                    mProteinPtrLattice[x][y] = mProteins[GetNumProteins() - 1];
+                }
+            }
         }
     }
 
@@ -60,9 +86,9 @@ void Lattice::GenerateLattice(int numProteinInit)
         int y = std::rand() % mLatticeSize;
         if (mLattice[x][y] == 0)
         {
-            mProteins.push_back(Protein(x, y, mNextProtID++));
+            mProteins.push_back(new Protein(x, y, mNextProtID++));
             mLattice[x][y] = 1;
-            mProteinPtrLattice[x][y] = &(mProteins[GetNumProteins() - 1]);
+            mProteinPtrLattice[x][y] = mProteins[GetNumProteins() - 1];
             prot_to_insert--;
         }
     }
@@ -86,9 +112,9 @@ bool Lattice::CheckInsertion()
             int y = std::rand() % mLatticeSize;
             if (mLattice[x][y] == 0)
             {
-                mProteins.push_back(Protein(x, y, mNextProtID++));
+                mProteins.push_back(new Protein(x, y, mNextProtID++));
                 mLattice[x][y] = 1;
-                mProteinPtrLattice[x][y] = &(mProteins[GetNumProteins() - 1]);
+                mProteinPtrLattice[x][y] = mProteins[GetNumProteins() - 1];
                 return true;
             }
         }
@@ -104,7 +130,7 @@ void Lattice::RunIteration()
         Direction l_direction;
         int curr_x, curr_y;
         int new_x, new_y;
-        mProteins[i].GetAddress(curr_x, curr_y);
+        mProteins[i]->GetAddress(curr_x, curr_y);
 
         // Find new direction for protein to move
         l_direction = GetNextAddress(curr_x, curr_y, new_x, new_y);
@@ -126,7 +152,7 @@ void Lattice::RunIteration()
                 mProteinPtrLattice[new_x][new_y] = mProteinPtrLattice[curr_x][curr_y];
                 mProteinPtrLattice[curr_x][curr_y] = nullptr;
 
-                mProteins[i].SetAddress(new_x, new_y);
+                mProteins[i]->SetAddress(new_x, new_y);
             }
         }
     }
@@ -252,9 +278,57 @@ int Lattice::GetProteinIndexAtLatSite(int x, int y)
 
     for (int i = 0; i < mProteins.size(); i++)
     {
-        if (prot_id == mProteins[i].GetId())
+        if (prot_id == mProteins[i]->GetId())
         {
             return i;
+        }
+    }
+
+    std::cout << "Protein not found int array wtf?!?!";
+}
+
+void Lattice::CreateNewClump(int iteration, std::vector<Protein*>& rInclusiveProteins)
+{
+    int clump_id = mNextClumpID++;
+    mClumps.push_back(new Clump(clump_id, iteration, rInclusiveProteins.size()));
+
+    for (auto itr : rInclusiveProteins)
+    {
+        itr->SetClumpId(clump_id);
+    }
+}
+
+void Lattice::UpdateClump(int iteration, int id, std::vector<Protein*>& rInclusiveProteins)
+{
+    if (!mClumps[id]->UpdateSize(iteration, rInclusiveProteins.size()))
+    {
+        CreateNewClump(iteration, rInclusiveProteins);
+    }
+}
+
+void Lattice::CheckDissociation()
+{
+    for (auto clump : mClumps)
+    {
+        if (clump->GetClumpState() == ClumpState::ACTIVE &&
+            clump->GetClumpSize() > mMinDissociationSize &&
+            mDissociationProb > RandomSample())
+        {
+            int clump_id = clump->GetID();
+            clump->SetClumpState(ClumpState::PRODUCTIVE);
+
+            for (int i = mProteins.size() - 1; i >= 0; i--)
+            {
+                if (mProteins[i]->GetClumpId() == clump_id)
+                {
+                    int x, y;
+                    mProteins[i]->GetAddress(x, y);
+                    mLattice[x][y] = 0;
+                    mProteinPtrLattice[x][y] = nullptr;
+                    delete mProteins[i];
+                    mProteins.erase(mProteins.begin() + i);
+                }
+            }
         }
     }
 }

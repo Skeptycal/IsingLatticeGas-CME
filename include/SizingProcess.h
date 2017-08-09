@@ -10,7 +10,7 @@ public:
     SizingProcess(Lattice* rLatticeObj, int clumptStartSize, int clumpMinSize);
     ~SizingProcess() {};
 
-    void Run();
+    void Run(int iteration);
 private:
 
     void GenerateCheckedSizeVecs(int numProteins);
@@ -19,7 +19,7 @@ private:
 
     void GetNeighborAddress(int currX, int currY, Direction dir, int& newX, int& newY);
 
-    void ClassifyClump(std::vector<Protein*>& inclusive_proteins);
+    void ClassifyClump(int iteration, std::vector<Protein*>& inclusive_proteins);
 
     Lattice* mpLatticeObj;
 
