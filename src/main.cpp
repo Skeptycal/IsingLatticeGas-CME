@@ -5,11 +5,11 @@
 #include "../include/SizingProcess.h"
 #include <boost\thread.hpp>
 
-const int NUM_PROTEIN_INIT = 5000;
+const int NUM_PROTEIN_INIT = 0;
 const int MIN_DISSOCIATION_SIZE = 60;
 const int INSERTION_MULTIPLIER = 30;
-const int DISSOCIATION_INTERVAL = 500;
-const int EXPORT_INTERVAL = 500;
+const int DISSOCIATION_INTERVAL = 1250;
+const int EXPORT_INTERVAL = 5000;
 const int CLUMP_START_SIZE = 10;
 const int CLUMP_MIN_SIZE = 3;
 const int MAX_PROTEINS = 20000;
@@ -19,7 +19,7 @@ const double R_I = 0.2;
 const double R_D = 0.5;
 const double DELTA_T = 0.0002328;
 
-const bool EXPORT_LATTICE = 0;
+const bool EXPORT_LATTICE = 1;
 const bool EXPORT_HISTOGRAM = 0;
 const bool EXPORT_CLUMP = 0;
 const bool EXPORT_AMAX = 0;
@@ -91,19 +91,19 @@ int main(int argc, const char* argv[])
     {
         std::cout << "Itr: " << itr << std::endl;
 
-        //if (itr % EXPORT_INTERVAL == 0)
-        //{
-        //    if (gpExpThread != nullptr)
-        //    {
-        //        gpExpThread->join();
-        //        delete gpExpThread;
-        //    }
+        if (itr % EXPORT_INTERVAL == 0)
+        {
+            if (gpExpThread != nullptr)
+            {
+                gpExpThread->join();
+                delete gpExpThread;
+            }
 
-        //    //Need to copy lattice before spinning a thread so the lattice is unchanged
-        //    std::vector<std::vector<int>> l_lattice;
-        //    lattice.GetLatticeCopy(l_lattice);
-        //    gpExpThread = new boost::thread(&Export::Run, &exp, itr, l_lattice);
-        //}
+            //Need to copy lattice before spinning a thread so the lattice is unchanged
+            std::vector<std::vector<int>> l_lattice;
+            lattice.GetLatticeCopy(l_lattice);
+            gpExpThread = new boost::thread(&Export::Run, &exp, itr, l_lattice);
+        }
 
         if (itr % DISSOCIATION_INTERVAL == 0)
         {

@@ -1,4 +1,5 @@
 #include "../include/SizingProcess.h"
+#include <iostream>
 
 SizingProcess::SizingProcess(Lattice* rLatticeObj, int clumptStartSize, int clumpMinSize)
 {
@@ -139,7 +140,7 @@ void SizingProcess::ClassifyClump(int iteration, std::vector<Protein*>& rInclusi
     int max_index = 0;
     for (size_t i = 1; i < clump_id_count.size(); i++)
     {
-        if (clump_id_count[i] > clump_id_count[max_index])
+        if (clump_id_count[i] >= clump_id_count[max_index])
         {
             max_index = i;
         }
@@ -150,6 +151,10 @@ void SizingProcess::ClassifyClump(int iteration, std::vector<Protein*>& rInclusi
     {
         if (rInclusiveProteins.size() >= mClumpStartSize)
         {
+            if (rInclusiveProteins.size() > 30)
+            {
+                std::cout << "WTF mate!!?!?";
+            }
             mpLatticeObj->CreateNewClump(iteration, rInclusiveProteins);
         }
     }

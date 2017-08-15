@@ -78,6 +78,9 @@ void Export::WriteClumps()
 {
     std::vector<Clump*> clump_vector = mpLatticeObj->GetClumpReferences();
 
+    std::ofstream temp;
+    temp.open(mOutputPath + "\\Clump.txt");
+
     for (auto clump : clump_vector)
     {
         std::vector<std::pair<int, int>> size_history = clump->GetSizeHistoryReference();
@@ -90,6 +93,7 @@ void Export::WriteClumps()
             case ClumpState::PRODUCTIVE:
             {
                 clump_file << "productive\n";
+                temp << "productive\n";
                 break;
             }
             case ClumpState::ACTIVE:
@@ -97,10 +101,12 @@ void Export::WriteClumps()
                 if (size_history[size_history.size() - 1].first == mMaxIteration)
                 {
                     clump_file << "active\n";
+                    temp << "active\n";
                 }
                 else
                 {
                     clump_file << "aborted\n";
+                    temp << "aborted\n";
                 }
                 break;
             }
